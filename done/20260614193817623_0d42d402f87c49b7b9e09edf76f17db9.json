@@ -1,0 +1,21 @@
+{
+    "Id":  "0d42d402f87c49b7b9e09edf76f17db9",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\sftp_file_upload_root\\DE00002\\Wiki-Blaze.Parameters.xml",
+    "FtpPath":  "",
+    "UserName":  "DE00002",
+    "Customer":  "DE00002",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-14T17:38:17.6227827+00:00",
+    "UpdatedAt":  "2026-06-14T17:39:27.0415907+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00002\\Wiki-Blaze.Parameters.xml",
+    "ArchivePath":  "C:\\Users\\Public\\sftp_file_upload_archive\\DE00002\\20260614\\Wiki-Blaze.Parameters.xml",
+    "SourceLength":  384,
+    "DestinationLength":  384,
+    "SourceHash":  "956F822FD9ECD3145DD5BE4ACA7EE398314DD68F15965EE5E6CA269AC2BDF9EA",
+    "DestinationHash":  "956F822FD9ECD3145DD5BE4ACA7EE398314DD68F15965EE5E6CA269AC2BDF9EA"
+}

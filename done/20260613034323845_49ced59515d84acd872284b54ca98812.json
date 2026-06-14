@@ -1,0 +1,21 @@
+{
+    "Id":  "49ced59515d84acd872284b54ca98812",
+    "Status":  "Ignored",
+    "LocalPath":  "C:\\Users\\terfoore\\source\\sftp_client_root\\DE00000\\web.csv",
+    "FtpPath":  "",
+    "UserName":  "DE00000",
+    "Customer":  "DE00000",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-13T01:43:23.8433869+00:00",
+    "UpdatedAt":  "2026-06-13T01:49:01.9741265+00:00",
+    "AttemptCount":  5,
+    "Source":  "ProVideStorLog",
+    "LastError":  "Ignored because path is outside configured SourceRoots.",
+    "DestinationPath":  "",
+    "ArchivePath":  "",
+    "SourceLength":  null,
+    "DestinationLength":  null,
+    "SourceHash":  "",
+    "DestinationHash":  ""
+}

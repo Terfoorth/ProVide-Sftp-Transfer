@@ -1,0 +1,21 @@
+{
+    "Id":  "8a5d97fa453543cdbd71efe28bf29583",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\sftp_file_upload_root\\DE00001\\00001.20261406.pdf",
+    "FtpPath":  "",
+    "UserName":  "DE00001",
+    "Customer":  "DE00001",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-14T16:33:17.2883779+00:00",
+    "UpdatedAt":  "2026-06-14T16:34:24.3116364+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00001\\00001.20261406.pdf",
+    "ArchivePath":  "C:\\Users\\Public\\sftp_file_upload_archive\\DE00001\\20260614\\00001.20261406.pdf",
+    "SourceLength":  139803,
+    "DestinationLength":  139803,
+    "SourceHash":  "C72E40A9CA2932F198983780AD84722FF916D4ACC6B2222C22BE8955DB3210F6",
+    "DestinationHash":  "C72E40A9CA2932F198983780AD84722FF916D4ACC6B2222C22BE8955DB3210F6"
+}

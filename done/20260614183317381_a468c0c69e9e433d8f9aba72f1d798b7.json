@@ -1,0 +1,21 @@
+{
+    "Id":  "a468c0c69e9e433d8f9aba72f1d798b7",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\sftp_file_upload_root\\DE00001\\DE00001_SAF_20261406",
+    "FtpPath":  "",
+    "UserName":  "DE00001",
+    "Customer":  "DE00001",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-14T16:33:17.3812618+00:00",
+    "UpdatedAt":  "2026-06-14T16:34:29.4043109+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00001\\DE00001_SAF_20261406",
+    "ArchivePath":  "C:\\Users\\Public\\sftp_file_upload_archive\\DE00001\\20260614\\DE00001_SAF_20261406",
+    "SourceLength":  13,
+    "DestinationLength":  13,
+    "SourceHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32",
+    "DestinationHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32"
+}

@@ -1,0 +1,21 @@
+{
+    "Id":  "3a2204a50a554f269b5321b5c41885c9",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\ftp_file_upload_root\\DE00000\\codex-transfer-test.csv",
+    "FtpPath":  "/In/codex-transfer-test.csv",
+    "UserName":  "DE00000",
+    "Customer":  "DE00000",
+    "ClientIp":  "127.0.0.1",
+    "EventName":  "OnUploadEnd",
+    "CreatedAt":  "2026-06-13T01:38:48.7351465+00:00",
+    "UpdatedAt":  "2026-06-13T01:38:57.3588651+00:00",
+    "AttemptCount":  1,
+    "Source":  "OnUploadEnd",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00000\\codex-transfer-test.csv",
+    "ArchivePath":  "C:\\Users\\Public\\ftp_file_upload_archive\\DE00000\\20260613\\codex-transfer-test.csv",
+    "SourceLength":  27,
+    "DestinationLength":  27,
+    "SourceHash":  "D398BDF8B5B3047E69CF6318A934ACD75A1F15129806E156258D3D5F06C7B2BE",
+    "DestinationHash":  "D398BDF8B5B3047E69CF6318A934ACD75A1F15129806E156258D3D5F06C7B2BE"
+}

@@ -1,0 +1,21 @@
+{
+    "Id":  "ae170fb0ce21473f86d1d46e97ccef9e",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\sftp_file_upload_root\\DE00000\\DE00000_FULL_20261406.xls",
+    "FtpPath":  "",
+    "UserName":  "DE00000",
+    "Customer":  "DE00000",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-14T16:58:17.4798402+00:00",
+    "UpdatedAt":  "2026-06-14T16:59:21.7601587+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00000\\DE00000_FULL_20261406.xls",
+    "ArchivePath":  "C:\\Users\\Public\\sftp_file_upload_archive\\DE00000\\20260614\\DE00000_FULL_20261406.xls",
+    "SourceLength":  13,
+    "DestinationLength":  13,
+    "SourceHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32",
+    "DestinationHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32"
+}

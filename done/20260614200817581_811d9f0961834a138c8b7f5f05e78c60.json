@@ -1,0 +1,21 @@
+{
+    "Id":  "811d9f0961834a138c8b7f5f05e78c60",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\sftp_file_upload_root\\DE00000\\in\\DE00000_INH_20261406.csv",
+    "FtpPath":  "",
+    "UserName":  "DE00000",
+    "Customer":  "DE00000",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-14T18:08:17.5663491+00:00",
+    "UpdatedAt":  "2026-06-14T18:09:21.1408861+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00000\\DE00000_INH_20261406.csv",
+    "ArchivePath":  "C:\\Users\\Public\\sftp_file_upload_archive\\DE00000\\20260614\\DE00000_INH_20261406.csv",
+    "SourceLength":  13,
+    "DestinationLength":  13,
+    "SourceHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32",
+    "DestinationHash":  "F73417FB57E5FB61D290E3335CD7B694F5148C366439F6C3F9F9067D08EEBE32"
+}

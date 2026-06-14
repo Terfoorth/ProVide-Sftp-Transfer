@@ -1,0 +1,21 @@
+{
+    "Id":  "82d3016ae57644ec85f73f81b64e83cf",
+    "Status":  "Archived",
+    "LocalPath":  "C:\\Users\\Public\\ftp_file_upload_root\\DE00000\\web3.csv",
+    "FtpPath":  "",
+    "UserName":  "DE00000",
+    "Customer":  "DE00000",
+    "ClientIp":  "",
+    "EventName":  "",
+    "CreatedAt":  "2026-06-13T01:43:23.6738297+00:00",
+    "UpdatedAt":  "2026-06-13T01:44:36.5560456+00:00",
+    "AttemptCount":  1,
+    "Source":  "SourceRootScan",
+    "LastError":  "",
+    "DestinationPath":  "C:\\Users\\Public\\provide-transfer-target-test\\DE00000\\web3.csv",
+    "ArchivePath":  "C:\\Users\\Public\\ftp_file_upload_archive\\DE00000\\20260613\\web3.csv",
+    "SourceLength":  554,
+    "DestinationLength":  554,
+    "SourceHash":  "35B93B6A8B30E6AC5BD06B67405EA5DD254013655563092C803D855493C52876",
+    "DestinationHash":  "35B93B6A8B30E6AC5BD06B67405EA5DD254013655563092C803D855493C52876"
+}

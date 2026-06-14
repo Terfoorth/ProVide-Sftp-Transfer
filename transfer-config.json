@@ -1,0 +1,20 @@
+{
+  "StateRoot": "C:\\ProgramData\\ProVideTransfer",
+  "SourceRoots": [
+    "C:\\Users\\Public\\sftp_file_upload_root"
+  ],
+  "DestinationRoot": "C:\\Users\\Public\\provide-transfer-target-test",
+  "ArchiveRoot": "C:\\Users\\Public\\sftp_file_upload_archive",
+  "AllowedPatterns": [
+    "*",
+    "*.csv",
+    "*xls",
+    "*xlsx",
+    "*.pdf"
+  ],
+  "StaleAfterMinutes": 15,
+  "EnableHashVerification": true,
+  "FileStabilitySeconds": 5,
+  "MaxAttempts": 5,
+  "ProVideLogRoot": "C:\\Program Files\\ProVide\\log"
+}

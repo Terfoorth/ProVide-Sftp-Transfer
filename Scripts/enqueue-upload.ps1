@@ -11,6 +11,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-ConfigValue {
+    param(
+        [object]$Config,
+        [string]$Name,
+        [object]$DefaultValue
+    )
+
+    if ($null -ne $Config -and $null -ne $Config.PSObject.Properties[$Name] -and $null -ne $Config.$Name) {
+        return $Config.$Name
+    }
+
+    return $DefaultValue
+}
+
 function Read-TransferConfig {
     param([string]$Path)
 
@@ -20,6 +34,10 @@ function Read-TransferConfig {
 
     return [pscustomobject]@{
         StateRoot = "C:\ProgramData\ProVideTransfer"
+        InboundRoot = "C:\Users\Public\sftp_file_upload_root"
+        InboundFolderName = "in"
+        OutboundFolderName = "out"
+        IgnoredPatterns = @("*.filepart", "*.partial", "*.tmp")
     }
 }
 
@@ -37,7 +55,7 @@ function Write-JsonFile {
         [object]$Value
     )
 
-    $json = $Value | ConvertTo-Json -Depth 8
+    $json = $Value | ConvertTo-Json -Depth 10
     $encoding = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Path, $json, $encoding)
 }
@@ -55,9 +73,63 @@ function Add-AuditEntry {
     Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
 }
 
+function Test-PatternList {
+    param(
+        [string]$Path,
+        [object[]]$Patterns
+    )
+
+    $fileName = [System.IO.Path]::GetFileName($Path)
+    foreach ($pattern in $Patterns) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$pattern) -and $fileName -like [string]$pattern) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Get-InboundPathInfo {
+    param(
+        [string]$Path,
+        [object]$Config
+    )
+
+    $inboundRoot = [string](Get-ConfigValue -Config $Config -Name "InboundRoot" -DefaultValue "C:\Users\Public\sftp_file_upload_root")
+    $inboundFolder = [string](Get-ConfigValue -Config $Config -Name "InboundFolderName" -DefaultValue "in")
+    $outboundFolder = [string](Get-ConfigValue -Config $Config -Name "OutboundFolderName" -DefaultValue "out")
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $fullRoot = [System.IO.Path]::GetFullPath($inboundRoot).TrimEnd('\')
+
+    if (-not $fullPath.StartsWith($fullRoot + "\", [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = ""; InputSubfolder = ""; Reason = "Source path is outside InboundRoot." }
+    }
+
+    $relative = $fullPath.Substring($fullRoot.Length + 1)
+    $parts = $relative -split "[\\/]"
+    if ($parts.Count -lt 3) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = ""; InputSubfolder = ""; Reason = "Source path is not under a customer inbound folder." }
+    }
+
+    if ($parts[1].Equals($outboundFolder, [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = $parts[0]; InputSubfolder = ""; Reason = "Outbound folder is not processed." }
+    }
+
+    if (-not $parts[1].Equals($inboundFolder, [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = $parts[0]; InputSubfolder = ""; Reason = "Source path is not under the inbound folder." }
+    }
+
+    $inputSubfolder = ""
+    if ($parts.Count -gt 3) {
+        $inputSubfolder = [string]::Join("\", $parts[2..($parts.Count - 2)])
+    }
+
+    return [pscustomobject]@{ IsInbound = $true; Customer = $parts[0]; InputSubfolder = $inputSubfolder; Reason = "" }
+}
+
 try {
     $config = Read-TransferConfig -Path $ConfigPath
-    $stateRoot = [string]$config.StateRoot
+    $stateRoot = [string](Get-ConfigValue -Config $config -Name "StateRoot" -DefaultValue "C:\ProgramData\ProVideTransfer")
     if ([string]::IsNullOrWhiteSpace($stateRoot)) {
         $stateRoot = "C:\ProgramData\ProVideTransfer"
     }
@@ -67,9 +139,42 @@ try {
     Ensure-Directory (Join-Path $stateRoot "logs")
 
     $now = [DateTimeOffset]::UtcNow
-    $id = [guid]::NewGuid().ToString("N")
     $fullLocalPath = [System.IO.Path]::GetFullPath($LocalPath)
-    $customer = if ([string]::IsNullOrWhiteSpace($UserName)) { "Unknown" } else { $UserName.Trim() }
+    $ignoredPatterns = @(Get-ConfigValue -Config $config -Name "IgnoredPatterns" -DefaultValue @("*.filepart", "*.partial", "*.tmp"))
+    $pathInfo = Get-InboundPathInfo -Path $fullLocalPath -Config $config
+
+    if (Test-PatternList -Path $fullLocalPath -Patterns $ignoredPatterns) {
+        Add-AuditEntry -StateRoot $stateRoot -Entry ([ordered]@{
+            Id = ""
+            Status = "Ignored"
+            LocalPath = $fullLocalPath
+            FtpPath = $FtpPath
+            UserName = $UserName
+            Customer = $pathInfo.Customer
+            EventName = $EventName
+            Timestamp = $now.ToString("o")
+            Message = "Upload event ignored because the file matches IgnoredPatterns."
+        })
+        exit 0
+    }
+
+    if (-not $pathInfo.IsInbound) {
+        Add-AuditEntry -StateRoot $stateRoot -Entry ([ordered]@{
+            Id = ""
+            Status = "Ignored"
+            LocalPath = $fullLocalPath
+            FtpPath = $FtpPath
+            UserName = $UserName
+            Customer = $pathInfo.Customer
+            EventName = $EventName
+            Timestamp = $now.ToString("o")
+            Message = $pathInfo.Reason
+        })
+        exit 0
+    }
+
+    $id = [guid]::NewGuid().ToString("N")
+    $customer = if ([string]::IsNullOrWhiteSpace($UserName)) { [string]$pathInfo.Customer } else { $UserName.Trim() }
 
     $job = [ordered]@{
         Id = $id
@@ -82,10 +187,17 @@ try {
         EventName = $EventName
         CreatedAt = $now.ToString("o")
         UpdatedAt = $now.ToString("o")
+        NextAttemptAt = $now.ToString("o")
         AttemptCount = 0
         Source = "OnUploadEnd"
         LastError = ""
+        ErrorCategory = ""
+        LockedSince = ""
+        CompletedAt = ""
+        InputSubfolder = [string]$pathInfo.InputSubfolder
+        RouteName = ""
         DestinationPath = ""
+        PartialPath = ""
         ArchivePath = ""
         SourceLength = $null
         DestinationLength = $null

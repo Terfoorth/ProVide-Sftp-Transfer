@@ -1,20 +1,51 @@
 {
   "StateRoot": "C:\\ProgramData\\ProVideTransfer",
+  "InboundRoot": "C:\\Users\\Public\\sftp_file_upload_root",
+  "InboundFolderName": "in",
+  "OutboundFolderName": "out",
   "SourceRoots": [
     "C:\\Users\\Public\\sftp_file_upload_root"
   ],
   "DestinationRoot": "C:\\Users\\Public\\provide-transfer-target-test",
   "ArchiveRoot": "C:\\Users\\Public\\sftp_file_upload_archive",
   "AllowedPatterns": [
-    "*",
     "*.csv",
-    "*xls",
-    "*xlsx",
+    "*.xls",
+    "*.xlsx",
     "*.pdf"
+  ],
+  "IgnoredPatterns": [
+    "*.filepart",
+    "*.partial",
+    "*.tmp"
+  ],
+  "RouteRules": [
+    {
+      "Name": "CsvDefault",
+      "Pattern": "*.csv",
+      "DestinationRoot": "C:\\Users\\Public\\provide-transfer-target-test",
+      "AppendCustomer": true
+    },
+    {
+      "Name": "ExcelDefault",
+      "Pattern": "*.xls*",
+      "DestinationRoot": "C:\\Users\\Public\\provide-transfer-target-test",
+      "AppendCustomer": true
+    },
+    {
+      "Name": "PdfDefault",
+      "Pattern": "*.pdf",
+      "DestinationRoot": "C:\\Users\\Public\\provide-transfer-target-test",
+      "AppendCustomer": true
+    }
   ],
   "StaleAfterMinutes": 15,
   "EnableHashVerification": true,
   "FileStabilitySeconds": 5,
   "MaxAttempts": 5,
+  "DefaultRetryDelaySeconds": 60,
+  "ChangingRetryDelaySeconds": 60,
+  "LockedRetryDelaySeconds": 120,
+  "MaxLockedMinutes": 1440,
   "ProVideLogRoot": "C:\\Program Files\\ProVide\\log"
 }

@@ -4,6 +4,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-ObjectValue {
+    param(
+        [object]$Object,
+        [string]$Name,
+        [object]$DefaultValue
+    )
+
+    if ($null -ne $Object -and $null -ne $Object.PSObject.Properties[$Name] -and $null -ne $Object.$Name) {
+        return $Object.$Name
+    }
+
+    return $DefaultValue
+}
+
 function Read-TransferConfig {
     param([string]$Path)
 
@@ -28,7 +42,7 @@ function Write-JsonFile {
         [object]$Value
     )
 
-    $json = $Value | ConvertTo-Json -Depth 10
+    $json = $Value | ConvertTo-Json -Depth 12
     $encoding = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Path, $json, $encoding)
 }
@@ -50,21 +64,22 @@ function Add-AuditEntry {
         FtpPath = $Job.FtpPath
         UserName = $Job.UserName
         Customer = $Job.Customer
+        InputSubfolder = $Job.InputSubfolder
         Timestamp = ([DateTimeOffset]::UtcNow.ToString("o"))
         Message = $Message
     }
     Add-Content -LiteralPath $logPath -Value ($entry | ConvertTo-Json -Depth 8 -Compress) -Encoding UTF8
 }
 
-function Test-AllowedPattern {
+function Test-PatternList {
     param(
         [string]$Path,
         [object[]]$Patterns
     )
 
     $fileName = [System.IO.Path]::GetFileName($Path)
-    foreach ($pattern in $Patterns) {
-        if ($fileName -like [string]$pattern) {
+    foreach ($pattern in @($Patterns)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$pattern) -and $fileName -like [string]$pattern) {
             return $true
         }
     }
@@ -72,57 +87,71 @@ function Test-AllowedPattern {
     return $false
 }
 
-function Test-PathUnderRoot {
-    param(
-        [string]$Path,
-        [object[]]$Roots
-    )
-
-    $fullPath = [System.IO.Path]::GetFullPath($Path)
-    foreach ($root in $Roots) {
-        if ([string]::IsNullOrWhiteSpace([string]$root)) {
-            continue
-        }
-
-        $fullRoot = [System.IO.Path]::GetFullPath([string]$root).TrimEnd('\')
-        if ($fullPath.Equals($fullRoot, [StringComparison]::OrdinalIgnoreCase)) {
-            return $true
-        }
-
-        if ($fullPath.StartsWith($fullRoot + "\", [StringComparison]::OrdinalIgnoreCase)) {
-            return $true
-        }
-    }
-
-    return $false
-}
-
-function Get-CustomerFromPath {
+function Get-InboundPathInfo {
     param(
         [string]$Path,
         [object]$Config
     )
 
+    $inboundRoot = [string](Get-ObjectValue -Object $Config -Name "InboundRoot" -DefaultValue "C:\Users\Public\sftp_file_upload_root")
+    $inboundFolder = [string](Get-ObjectValue -Object $Config -Name "InboundFolderName" -DefaultValue "in")
+    $outboundFolder = [string](Get-ObjectValue -Object $Config -Name "OutboundFolderName" -DefaultValue "out")
     $fullPath = [System.IO.Path]::GetFullPath($Path)
-    foreach ($root in $Config.SourceRoots) {
-        $fullRoot = [System.IO.Path]::GetFullPath([string]$root).TrimEnd('\')
-        if ($fullPath.StartsWith($fullRoot + "\", [StringComparison]::OrdinalIgnoreCase)) {
-            $relative = $fullPath.Substring($fullRoot.Length + 1)
-            $parts = $relative -split "[\\/]"
-            if ($parts.Count -gt 1 -and -not [string]::IsNullOrWhiteSpace($parts[0])) {
-                return $parts[0]
-            }
-        }
+    $fullRoot = [System.IO.Path]::GetFullPath($inboundRoot).TrimEnd('\')
+
+    if (-not $fullPath.StartsWith($fullRoot + "\", [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = ""; InputSubfolder = ""; Reason = "Source path is outside InboundRoot." }
     }
 
-    return "Unknown"
+    $relative = $fullPath.Substring($fullRoot.Length + 1)
+    $parts = $relative -split "[\\/]"
+    if ($parts.Count -lt 3) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = ""; InputSubfolder = ""; Reason = "Source path is not under a customer inbound folder." }
+    }
+
+    if ($parts[1].Equals($outboundFolder, [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = $parts[0]; InputSubfolder = ""; Reason = "Outbound folder is not processed." }
+    }
+
+    if (-not $parts[1].Equals($inboundFolder, [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ IsInbound = $false; Customer = $parts[0]; InputSubfolder = ""; Reason = "Source path is not under the inbound folder." }
+    }
+
+    $inputSubfolder = ""
+    if ($parts.Count -gt 3) {
+        $inputSubfolder = [string]::Join("\", $parts[2..($parts.Count - 2)])
+    }
+
+    return [pscustomobject]@{ IsInbound = $true; Customer = $parts[0]; InputSubfolder = $inputSubfolder; Reason = "" }
+}
+
+function Test-CandidatePath {
+    param(
+        [object]$Config,
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return $false
+    }
+
+    if (Test-PatternList -Path $Path -Patterns @(Get-ObjectValue -Object $Config -Name "IgnoredPatterns" -DefaultValue @("*.filepart", "*.partial", "*.tmp"))) {
+        return $false
+    }
+
+    if (-not (Test-PatternList -Path $Path -Patterns @(Get-ObjectValue -Object $Config -Name "AllowedPatterns" -DefaultValue @("*.csv", "*.xls", "*.xlsx", "*.pdf")))) {
+        return $false
+    }
+
+    $info = Get-InboundPathInfo -Path $Path -Config $Config
+    return [bool]$info.IsInbound
 }
 
 function Get-KnownLocalPaths {
     param([object]$Config)
 
     $paths = New-Object "System.Collections.Generic.HashSet[string]" ([StringComparer]::OrdinalIgnoreCase)
-    foreach ($bucket in @("queue", "processing", "done", "failed")) {
+    foreach ($bucket in @("queue", "processing", "failed")) {
         $dir = Join-Path $Config.StateRoot $bucket
         if (-not (Test-Path -LiteralPath $dir)) {
             continue
@@ -155,22 +184,30 @@ function New-TransferJob {
     $now = [DateTimeOffset]::UtcNow
     $id = [guid]::NewGuid().ToString("N")
     $fullLocalPath = [System.IO.Path]::GetFullPath($LocalPath)
-    $customer = if ([string]::IsNullOrWhiteSpace($UserName)) { Get-CustomerFromPath -Path $fullLocalPath -Config $Config } else { $UserName.Trim() }
+    $pathInfo = Get-InboundPathInfo -Path $fullLocalPath -Config $Config
+    $customer = if ([string]::IsNullOrWhiteSpace($UserName)) { [string]$pathInfo.Customer } else { $UserName.Trim() }
     $job = [ordered]@{
         Id = $id
         Status = "Queued"
         LocalPath = $fullLocalPath
         FtpPath = $FtpPath
-        UserName = $UserName
+        UserName = $customer
         Customer = $customer
         ClientIp = ""
         EventName = ""
         CreatedAt = $now.ToString("o")
         UpdatedAt = $now.ToString("o")
+        NextAttemptAt = $now.ToString("o")
         AttemptCount = 0
         Source = $Source
         LastError = ""
+        ErrorCategory = ""
+        LockedSince = ""
+        CompletedAt = ""
+        InputSubfolder = [string]$pathInfo.InputSubfolder
+        RouteName = ""
         DestinationPath = ""
+        PartialPath = ""
         ArchivePath = ""
         SourceLength = $null
         DestinationLength = $null
@@ -185,7 +222,7 @@ function New-TransferJob {
     $jobPath = Join-Path $queueDir $fileName
     Write-JsonFile -Path $tmpPath -Value $job
     Move-Item -LiteralPath $tmpPath -Destination $jobPath
-    Add-AuditEntry -Config $Config -Job $job -Message "Upload job queued by reconciliation."
+    Add-AuditEntry -Config $Config -Job ([pscustomobject]$job) -Message "Upload job queued by reconciliation."
 }
 
 function Add-SourceRootJobs {
@@ -194,23 +231,30 @@ function Add-SourceRootJobs {
         [System.Collections.Generic.HashSet[string]]$KnownPaths
     )
 
-    foreach ($root in $Config.SourceRoots) {
-        if (-not (Test-Path -LiteralPath ([string]$root))) {
-            continue
+    $inboundRoot = [string](Get-ObjectValue -Object $Config -Name "InboundRoot" -DefaultValue "C:\Users\Public\sftp_file_upload_root")
+    $inboundFolder = [string](Get-ObjectValue -Object $Config -Name "InboundFolderName" -DefaultValue "in")
+    if (-not (Test-Path -LiteralPath $inboundRoot)) {
+        return
+    }
+
+    Get-ChildItem -LiteralPath $inboundRoot -Directory | ForEach-Object {
+        $inboundDir = Join-Path $_.FullName $inboundFolder
+        if (-not (Test-Path -LiteralPath $inboundDir -PathType Container)) {
+            return
         }
 
-        Get-ChildItem -LiteralPath ([string]$root) -File -Recurse | ForEach-Object {
+        Get-ChildItem -LiteralPath $inboundDir -File -Recurse | ForEach-Object {
             $fullPath = [System.IO.Path]::GetFullPath($_.FullName)
             if ($KnownPaths.Contains($fullPath)) {
                 return
             }
 
-            if (-not (Test-AllowedPattern -Path $fullPath -Patterns $Config.AllowedPatterns)) {
+            if (-not (Test-CandidatePath -Config $Config -Path $fullPath)) {
                 return
             }
 
-            $customer = Get-CustomerFromPath -Path $fullPath -Config $Config
-            New-TransferJob -Config $Config -LocalPath $fullPath -FtpPath "" -UserName $customer -Source "SourceRootScan"
+            $pathInfo = Get-InboundPathInfo -Path $fullPath -Config $Config
+            New-TransferJob -Config $Config -LocalPath $fullPath -FtpPath "" -UserName ([string]$pathInfo.Customer) -Source "SourceRootScan"
             [void]$KnownPaths.Add($fullPath)
         }
     }
@@ -222,7 +266,7 @@ function Add-ProVideStorJobs {
         [System.Collections.Generic.HashSet[string]]$KnownPaths
     )
 
-    $logRoot = [string]$Config.ProVideLogRoot
+    $logRoot = [string](Get-ObjectValue -Object $Config -Name "ProVideLogRoot" -DefaultValue "")
     if ([string]::IsNullOrWhiteSpace($logRoot) -or -not (Test-Path -LiteralPath $logRoot)) {
         return
     }
@@ -239,24 +283,12 @@ function Add-ProVideStorJobs {
                 return
             }
 
-            if (-not (Test-Path -LiteralPath $localPath -PathType Leaf)) {
+            if (-not (Test-CandidatePath -Config $Config -Path $localPath)) {
                 return
             }
 
-            if (-not (Test-PathUnderRoot -Path $localPath -Roots $Config.SourceRoots)) {
-                return
-            }
-
-            if (-not (Test-AllowedPattern -Path $localPath -Patterns $Config.AllowedPatterns)) {
-                return
-            }
-
-            $userName = (($parts[3] -split " ")[0]).Trim()
-            if ([string]::IsNullOrWhiteSpace($userName)) {
-                $userName = Get-CustomerFromPath -Path $localPath -Config $Config
-            }
-
-            New-TransferJob -Config $Config -LocalPath $localPath -FtpPath "" -UserName $userName -Source "ProVideStorLog"
+            $pathInfo = Get-InboundPathInfo -Path $localPath -Config $Config
+            New-TransferJob -Config $Config -LocalPath $localPath -FtpPath "" -UserName ([string]$pathInfo.Customer) -Source "ProVideStorLog"
             [void]$KnownPaths.Add($localPath)
         }
     }

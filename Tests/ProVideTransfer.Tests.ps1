@@ -90,25 +90,4 @@ Describe "ProVide transfer production behavior" {
         @(Get-ChildItem -LiteralPath (Join-Path $script:StateRoot "done") -Filter "*.json" -File).Count | Should Be 1
     }
 
-    It "normalizes customer UAC resources and creates in/out folders" {
-        $accountsRoot = Join-Path $script:TestRoot "accounts"
-        New-Item -ItemType Directory -Force -Path $accountsRoot | Out-Null
-        $uacPath = Join-Path $accountsRoot "acc[DE00999].uac"
-        Set-Content -LiteralPath $uacPath -Value @(
-            "Username=DE00999",
-            "Password.e1=redacted",
-            "Realname=Test",
-            "/DE00999||",
-            "/DE00999|$script:InboundRoot\DE00999|,AF,DF,LD,RF,WF",
-            "{Files Uploaded: NODE=0"
-        )
-
-        & (Join-Path $script:ScriptRoot "sync-provide-uac-structure.ps1") -ConfigPath $script:ConfigPath -AccountsRoot $accountsRoot
-
-        Test-Path -LiteralPath (Join-Path $script:InboundRoot "DE00999\in") | Should Be $true
-        Test-Path -LiteralPath (Join-Path $script:InboundRoot "DE00999\out") | Should Be $true
-        $uac = Get-Content -LiteralPath $uacPath
-        ($uac -contains "/DE00999/in|$script:InboundRoot\DE00999\in|,AF,DF,LD,RF,WF") | Should Be $true
-        ($uac -contains "/DE00999/out|$script:InboundRoot\DE00999\out|,AF,DF,LD,RF,WF") | Should Be $true
-    }
 }

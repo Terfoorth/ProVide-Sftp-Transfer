@@ -1,8 +1,7 @@
 param(
     [string]$TaskName = "ProVide Transfer Queue Worker",
     [string]$ScriptPath = "C:\ProgramData\ProVideTransfer\Scripts\process-transfer-queue.ps1",
-    [string]$ReconcileScriptPath = "C:\ProgramData\ProVideTransfer\Scripts\reconcile-transfer-state.ps1",
-    [string]$UacSyncScriptPath = "C:\ProgramData\ProVideTransfer\Scripts\sync-provide-uac-structure.ps1"
+    [string]$ReconcileScriptPath = "C:\ProgramData\ProVideTransfer\Scripts\reconcile-transfer-state.ps1"
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,15 +25,6 @@ $reconcileAction = New-ScheduledTaskAction `
 $reconcileTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
 Register-ScheduledTask -TaskName $reconcileTaskName -Action $reconcileAction -Trigger $reconcileTrigger -Settings $settings -Description "Reconciles ProVide inbound folders and STOR logs into transfer queue jobs." -Force | Out-Null
 
-$uacSyncTaskName = "$TaskName UAC Structure Sync"
-$uacSyncAction = New-ScheduledTaskAction `
-    -Execute $powershell `
-    -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$UacSyncScriptPath`""
-
-$uacSyncTrigger = New-ScheduledTaskTrigger -Daily -At "01:15"
-Register-ScheduledTask -TaskName $uacSyncTaskName -Action $uacSyncAction -Trigger $uacSyncTrigger -Settings $settings -Description "Creates and normalizes ProVide customer in/out folders from UAC account files." -Force | Out-Null
-
 Write-Host "Registered scheduled tasks:"
 Write-Host " - $TaskName"
 Write-Host " - $reconcileTaskName"
-Write-Host " - $uacSyncTaskName"
